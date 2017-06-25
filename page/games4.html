@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>贪吃蛇</title>
+    <style>
+        *{margin: 0; padding: 0;}
+        .canvas{width: 400px; height: 400px; position: absolute;}
+    </style>
+</head>
+<body>
+
+<div class="canvas"></div>
+
+<script>
+    //绘制画布
+    var zbxArr = [];
+    var frag = document.createDocumentFragment();
+    for(var i=0; i<20; i++){
+        var oneArr = [];
+        for(var j=0; j<20; j++){
+            var div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = j*20+'px';
+            div.style.top = i*20+'px';
+            div.style.width = '20px';
+            div.style.height = '20px';
+            div.style.background = 'black';
+            frag.appendChild(div);
+            oneArr.push(div);
+        }
+        zbxArr.push(oneArr);
+    }
+    document.querySelector('.canvas').appendChild(frag);
+
+    //绘制指定位置色块方法
+    function drawOneSquare(location,color) {
+        for(var i=0; i<zbxArr.length; i++) {
+            for(var j=0; j<zbxArr[i].length; j++) {
+                var left = zbxArr[i][j].style.left;
+                var top = zbxArr[i][j].style.top;
+                if((parseInt(left.substring(0,left.length-2))==(location%20*20)) && (parseInt(top.substring(0,top.length-2))==(Math.floor(location/20)*20))){
+                    zbxArr[i][j].style.background = color;
+                }
+            }
+        }
+    }
+
+    var snakeBodyArr = [42,41];
+    var nextLocation;
+    var foodNum = 43;
+    var fangxiang = 1;
+
+
+    /*
+        第五节课 1内容：
+        到这里我们已经完成了贪吃蛇游戏的基本设置。
+        还差最后一步我们就能够完成这个游戏
+        那就是所有游戏的共同之处：交互
+
+        贪吃蛇是一款传统的游戏，因此我们采用上下左右四个方向按钮来控制蛇的移动。
+        那么在添加键盘事件之前，我们必须知道的事情是上下左右按键编码是多少：
+        上：38
+        下：40
+        左：37
+        右：39
+        乍一下的看来对于上下左右的控制没什么帮助，但是仔细分析就会得到一个惊人的结论：
+        蛇左移一个格子：nextLocation = snakeBodyArr[0]+(-1)
+        蛇上移一个格子：nextLocation = snakeBodyArr[0]+(-20)
+        蛇右移一个格子：nextLocation = snakeBodyArr[0]+(1)
+        蛇下移一个格子：nextLocation = snakeBodyArr[0]+(20)
+
+        所以我创建代表方向的数组【-1,-20,1,20】
+        用(按键编码-37)得到0,1,2,3四个下标就能从数组中分别获取不同的方向
+    */
+    document.onkeydown=function(e){
+        var keyCode = (e||event).keyCode;
+        var chaValue = keyCode-37;
+        var touchArr = [-1,-20,1,20];
+        /*
+            第五节课 2内容：
+            当我们按下一个按键的时候，的确能够从数组中获取到一个相应的方向。
+            但是并不是所有的按键都能够被执行！
+            所以在这里当用户按下方向键以外的某个按键时，我们要做出处理
+
+            因为每一次间隔调用后nextLocation都会被重新赋值
+            所以我们将nextLocation变量当做是一个临时容器，来存放我们的按键结果。
+            通过一个简单的||或运算，避免了无效按键
+        */
+        nextLocation = touchArr[chaValue]||fangxiang;
+        /*
+            第五节课 2内容·续：
+            可能有人回问，问什么不直接将得到的结果赋值给fangxiang变量？
+            这样不就能在按下按键之后，就能直接改变蛇的运行方向了么？
+
+            诚然，不过正如我刚才所说的：
+                并不是所有的按键都能够被执行！
+            如果当蛇向右移动的时候，按下了左键。那么很显然这个方向赋值就是无效的。
+            因此我们还要排除无效的方向按键
+
+            至于如何判断：
+            和当前蛇运行的方向相反的按键即为无效按键！
+            而蛇运行的反向我们是能够获取的：
+                snakeBodyArr[1]-snakeBodyArr[0]
+        */
+        if(snakeBodyArr[1]-snakeBodyArr[0] == nextLocation){
+            //反向则保持fangxiang变量值不变
+            fangxiang = fangxiang;
+        }else{
+            //如果是其他方向按键，就改变fangxiang变量。
+            fangxiang = nextLocation;
+        }
+    };
+
+
+    //游戏执行
+    var timer = setInterval(function(){
+        //添加蛇头下一个出现的位置
+        snakeBodyArr.unshift(nextLocation=snakeBodyArr[0]+fangxiang);
+        //结束判断
+        if(snakeBodyArr.indexOf(nextLocation,1)>0 ||
+                nextLocation<0 ||
+                nextLocation>400 ||
+                nextLocation%20==0&&fangxiang==1 ||
+                nextLocation%20==20&&fangxiang==-1
+        ) {
+            clearInterval(timer);
+            return alert("GAME OVER");
+        }
+        //绘制蛇身
+        drawOneSquare(nextLocation,'cyan');
+        //增加判断
+        if(nextLocation==foodNum){
+            //创建食物
+            do{
+                foodNum=Math.floor(Math.random()*400);
+            }
+            while(snakeBodyArr.indexOf(foodNum)>=0);
+            //绘制食物
+            drawOneSquare(foodNum,"Yellow");
+        }else {
+            //蛇尾离开
+            drawOneSquare(snakeBodyArr.pop(), "Black");
+        }
+    },200);
+
+</script>
+
+</body>
+</html>
