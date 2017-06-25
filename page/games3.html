@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>无限可能</title>
+	</head>
+	<style type="text/css">
+		canvas{
+			border: 2px solid red;
+			display: block;
+			margin: 0 auto;
+		}
+		.box{
+			width: 500px;
+			margin: 0 auto;
+			
+		}
+		input{
+			width: 50%;
+			padding: 5px;
+			border:1px solid pink;
+			margin-top: 2px;
+			box-shadow: 0px 0px 1px 0px darkcyan;
+			outline: 0 none;
+			box-sizing: border-box;
+		}
+	</style>
+	<body>
+		<canvas id="view" width="" height=""></canvas>
+		<div class="box"><input type="text" value="❤" /><input type="text" /></div>
+	</body>
+	<script type="text/javascript">
+	
+		/**
+		 * tween.js里面的tbcd
+		 *  t 开始时间
+		 *  
+		 *  b 起始值
+		 * 
+		 *  c 需要变化的量（递增或者减的值）
+		 * 
+		 *  d 结束时间
+		 * 
+		 * 
+		 */
+		
+		var canvas = document.getElementById('view');
+		
+		var ps = canvas.getContext('2d');
+		
+		var width = 500;
+		
+		var height = 400;
+		
+		canvas.width = width;
+		
+		canvas.height = height;
+		
+		
+		// 1.创建一个舞台对象
+		var stage = {
+			
+			children:[],
+			
+			sid:0,
+			
+			randomColor:function(){
+				
+				function random(num){
+					
+					return Math.floor(Math.random()*num)
+					
+				}
+				
+				var r = 255;//(2);
+				
+				var g = random(255);
+				
+				var b = random(255);
+				
+				return 'rgb('+r+','+g+','+b+')';
+			},
+
+			
+			back_easeIn: function(t, b, c, d, s) {
+				
+				if(s == undefined) s = 1.70158;
+				
+				return c * (t /= d) * t * ((s + 1) * t - s) + b;
+			},
+			
+			fillText:function(txt,unit){
+				
+				this.unit = unit || '+';
+				
+				//每次绘制文字前先清一下舞台上的学员
+				this.children = [];
+				
+				var x = parseInt(width/2);
+				
+				var y = parseInt(height/2);
+				
+				ps.textAlign = 'center';
+				
+				ps.font = 'bold 200px 微软雅黑';
+				
+				ps.fillText(txt,x,y);
+				
+				this.getPoints();
+				
+				return this
+				
+			},
+			
+			getPoints:function(){
+				
+				//1.获取图片信息
+				var imgData = ps.getImageData(0,0,width,height);
+				
+				//2.像素点信息放在.data
+				var data = imgData.data;
+				
+				var num = 9;
+				
+				//保存像素点位置信息
+				var points =  this.children;
+				
+				//3.外层循环遍历高度
+				for(var y = 0; y<height ; y+=num){
+					
+					
+					//4.内层循环遍历宽度
+					for(var x = 0; x<width; x+=num){
+						
+						//5.计算当前像素点的索引值 （第几个）  y*width+x
+						var index = (y*width+x)*4;// 四个值表示一个像素 点
+						
+						var opacity = data[index+3];  // r  g  b  a 
+						//6.限制透明度值  如果过小就不要了
+						if(opacity>200){
+							
+							//6.1生成随机的起始sx  sy 
+							var sx = Math.floor(Math.random()*width);
+							
+							var sy = Math.floor(Math.random()*height);
+							
+							
+							//7.将当前像素点XY坐标存入数组 
+							points.push({ x:x,y:y,sx:sx,sy:sy  } );
+							// 每个像素点 是个对象，它有xy坐标
+							// 有当前的起始位置（随机的）
+							
+						}
+						
+						//console.log(index)
+						
+					}
+					
+					
+				}
+				
+				return this
+				
+			},
+			
+			play:function(){
+				//0.!!!每次新动画执行之前一定要清除画布，否则会获取上一声动画残留的像素点
+				ps.clearRect(0,0,width,height);
+				
+				//1.每次动画开场要结束上一场动画
+				if(this.sid){
+					
+					//清除之前的定时器
+					clearInterval(this.sid);
+					
+				}
+				
+				var self = this;
+				
+				var speed = 20;
+				
+				var startTime = 0;
+				
+				var endTime = 1000;
+				
+				var start = 50;
+				
+				var end = 30; 
+				
+				var children = self.children;
+				
+				ps.fillStyle = 'deeppink';
+				
+				ps.font='10px 微软雅黑';
+				
+				this.sid = setInterval(function(){
+					
+					startTime+=speed;
+					
+					if(startTime>endTime){
+						
+						return clearInterval(self.sid);
+						
+					}
+					//清场
+					ps.clearRect(0,0,width,height);
+					
+					//遍历像素点 绘制小圆点
+					
+					for(var i = 0; i<children.length;i++){
+						
+						var tmp = children[i];
+						
+						var x = self.back_easeIn(startTime,tmp.sx,tmp.x-tmp.sx,endTime);
+						
+						var y = self.back_easeIn(startTime,tmp.sy,tmp.y-tmp.sy,endTime);
+						
+						//根据坐标值 绘制圆点
+						ps.beginPath();
+						
+						//ps.arc(x,y,2,0,2*Math.PI);
+					//	ps.textAlign='center';
+						
+						ps.fillStyle = self.randomColor();
+						
+						ps.fillText(self.unit,x,y);
+						
+					//	ps.fill();
+						
+						
+					}
+					
+					var num = self.back_easeIn(startTime,start,end,endTime);
+					
+					
+					
+					
+				},speed)
+				
+			}
+			
+		}
+		/**
+		 * 1.绘制文字
+		 * 2.遍历画布获取像素点信息
+		 * 3.根据像素点坐标重新绘制像素点
+		 */
+		
+		
+		stage.fillText('❤').play();
+		
+		document.querySelector('input').onkeydown=function(e){
+			
+			if(e.keyCode==13){
+				
+				stage.fillText(this.value,this.nextElementSibling.value).play();
+				
+			}
+		
+		}
+		
+		
+		
+	</script>
+	
+</html>
